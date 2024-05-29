@@ -1,0 +1,3 @@
+Comando para correr prisma
+
+npx prisma migrate dev --name init --schema .\models\schema.prisma

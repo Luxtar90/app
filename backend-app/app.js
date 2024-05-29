@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const userRoutes = require('./routes/user');
+const { swaggerUi, swaggerDocs } = require('./swagger');
 
 const app = express();
 
@@ -14,10 +15,13 @@ app.use(cors({
 
 // Middleware para analizar JSON en solicitudes
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// app.use(bodyParser.urlencoded({ extended: true }));
 
 // Rutas de tu API
 app.use('/api/users', userRoutes);
+
+// Configurar Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 const PORT = process.env.PORT || 3001;
 
