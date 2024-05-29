@@ -1,64 +1,127 @@
 import React, { useState } from 'react';
-import axios from '../utils/axiosConfig';
 import { useRouter } from 'next/router';
+import styled from 'styled-components';
+import axios from 'axios';
 
-const ResetPasswordForm: React.FC = () => {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+const ResetPasswordFormWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f5f5f7;
+  font-family: 'Poppins', sans-serif;
+`;
+
+const FormContainer = styled.div`
+  display: flex;
+  max-width: 1200px;
+  width: 100%;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+`;
+
+const FormSection = styled.div`
+  flex: 1;
+  padding: 60px;
+`;
+
+const Title = styled.h2`
+  margin-bottom: 20px;
+  font-size: 28px;
+  color: #1c1c1e;
+  text-align: center;
+`;
+
+const InputContainer = styled.div`
+  position: relative;
+  margin-bottom: 8px;
+`;
+
+const Input = styled.input`
+  width: calc(100% - 20px);
+  padding: 12px;
+  padding-right: 40px;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  background-color: #F1F6F9;
+  color: #1c1c1e;
+  outline: none;
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+`;
+
+const SubmitButton = styled.button`
+  padding: 12px 24px;
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 10px;
+`;
+
+const ResetPasswordForm = () => {
+  const [newPassword, setNewPassword] = useState('');
+  const [errors, setErrors] = useState<{ newPassword?: string }>({});
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
   const router = useRouter();
   const { token } = router.query;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { [key: string]: string } = {};
-    if (!password) newErrors.password = 'La contraseña es obligatoria';
-    if (password !== confirmPassword) newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    const newErrors: { newPassword?: string } = {};
+    if (!newPassword) newErrors.newPassword = 'La nueva contraseña es obligatoria';
     setErrors(newErrors);
-
-    if (!Object.keys(newErrors).length && token) {
+    if (!Object.keys(newErrors).length) {
       try {
-        const response = await axios.post('/reset-password', { token, newPassword: password });
-        setMessage('Contraseña restablecida exitosamente.');
-        setErrors({});
-        // Opcionalmente, redirigir al usuario a la página de inicio de sesión
-        // router.push('/login');
+        const res = await axios.post('/api/reset-password', { token, newPassword });
+
+        if (res.status === 200) {
+          setResetSuccess('Contraseña restablecida exitosamente');
+          setTimeout(() => {
+            router.push('/login'); // Cambia '/login' por la ruta adecuada
+          }, 2000);
+        } else {
+          const { message } = res.data;
+          setResetError(message);
+        }
       } catch (error) {
-        setErrors({ general: error.response?.data?.error || 'Error al restablecer la contraseña' });
+        setResetError('Error al restablecer contraseña');
       }
     }
   };
 
   return (
-    <div>
-      <h2>Restablecer Contraseña</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Nueva Contraseña:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {errors.password && <p>{errors.password}</p>}
-        </div>
-        <div>
-          <label>Confirmar Nueva Contraseña:</label>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          {errors.confirmPassword && <p>{errors.confirmPassword}</p>}
-        </div>
-        {errors.general && <p>{errors.general}</p>}
-        {message && <p>{message}</p>}
-        <button type="submit">Restablecer Contraseña</button>
-      </form>
-    </div>
+    <ResetPasswordFormWrapper>
+      <FormContainer>
+        <FormSection>
+          <Title>Restablecer Contraseña</Title>
+          <form onSubmit={handleSubmit}>
+            <InputContainer>
+              <Input
+                type="password"
+                placeholder="Nueva Contraseña"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              {errors.newPassword && <ErrorMessage>{errors.newPassword}</ErrorMessage>}
+            </InputContainer>
+            {resetError && <ErrorMessage>{resetError}</ErrorMessage>}
+            {resetSuccess && <ErrorMessage style={{ color: 'green' }}>{resetSuccess}</ErrorMessage>}
+            <SubmitButton type="submit">Restablecer</SubmitButton>
+          </form>
+        </FormSection>
+      </FormContainer>
+    </ResetPasswordFormWrapper>
   );
 };
 

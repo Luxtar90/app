@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
-import axios from '../utils/axiosConfig';
+import { useRouter } from 'next/router';
 
 const LoginFormWrapper = styled.div`
   display: flex;
@@ -38,14 +38,6 @@ const LogoText = styled.span`
   font-weight: 600;
   color: rgba(28, 28, 30, 0.6); /* Color más suave */
   margin-left: 10px;
-`;
-
-const ImageSection = styled.div`
-  flex: 1;
-  background: #f5f5f7;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 `;
 
 const Title = styled.h2`
@@ -103,12 +95,13 @@ const Divider = styled.div`
 
 const InputContainer = styled.div`
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 `;
 
 const Input = styled.input`
-  width: 100%;
+  width: calc(100% - 20px);
   padding: 12px;
+  padding-right: 40px;
   border: none;
   border-radius: 30px;
   font-size: 16px;
@@ -123,40 +116,90 @@ const ErrorMessage = styled.p`
   margin-top: 5px;
 `;
 
+const ShowPasswordButton = styled.button`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+`;
+
 const SubmitButton = styled.button`
-  width: 100%;
-  padding: 12px;
+  padding: 12px 24px;
   background-color: #007aff;
   color: white;
   border: none;
   border-radius: 30px;
   font-size: 16px;
   cursor: pointer;
+  margin-left: 10px;
+`;
+
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+`;
+
+const CheckboxLabel = styled.label`
+  margin-left: 8px;
+  font-size: 14px;
+`;
+
+const LoginFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 10px;
+`;
+
+const ForgotPasswordLink = styled.a`
+  font-size: 14px;
+  color: #007aff;
+  cursor: pointer;
+`;
+
+const FormActions = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [success, setSuccess] = useState<string>('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string, password?: string }>({});
+  const [loginError, setLoginError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: { email?: string, password?: string } = {};
     if (!email) newErrors.email = 'El correo es obligatorio';
     if (!password) newErrors.password = 'La contraseña es obligatoria';
     setErrors(newErrors);
-
     if (!Object.keys(newErrors).length) {
       try {
-        const response = await axios.post('/login', { email, password });
-        setSuccess('Inicio de sesión exitoso');
-        setErrors({});
-        // Aquí puedes manejar la redirección después del login
-        console.log('User logged in:', response.data);
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (res.ok) {
+          const { token } = await res.json();
+          // Guardar el token y redirigir al usuario
+          localStorage.setItem('token', token);
+          router.push('/dashboard'); // Cambia '/dashboard' por la ruta adecuada
+        } else {
+          const { message } = await res.json();
+          setLoginError(message);
+        }
       } catch (error) {
-        setErrors({ general: error.response?.data?.message || 'Error al iniciar sesión' });
+        setLoginError('Error al iniciar sesión');
       }
     }
   };
@@ -169,7 +212,7 @@ const LoginForm = () => {
             <Image src="/logo.png" alt="Logo" width={60} height={60} />
             <LogoText>TaskEase</LogoText>
           </LogoContainer>
-          <Title>Iniciar Sesión</Title>
+          <Title>Inicia Sesión</Title>
           <SocialLoginContainer>
             <SocialButton>
               <Image src="/facebook.png" alt="Facebook" width={24} height={24} />
@@ -181,12 +224,12 @@ const LoginForm = () => {
               <Image src="/apple.png" alt="Apple" width={24} height={24} />
             </SocialButton>
           </SocialLoginContainer>
-          <Divider>o por vía correo</Divider>
+          <Divider>o por via correo</Divider>
           <form onSubmit={handleSubmit}>
             <InputContainer>
               <Input
                 type="email"
-                placeholder="Correo"
+                placeholder="Usuario / Correo"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -194,24 +237,36 @@ const LoginForm = () => {
             </InputContainer>
             <InputContainer>
               <Input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <ShowPasswordButton
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <Image src="/eye.png" alt="Mostrar contraseña" width={24} height={24} />
+              </ShowPasswordButton>
               {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
             </InputContainer>
-            {errors.general && <ErrorMessage>{errors.general}</ErrorMessage>}
-            {success && <p>{success}</p>}
-            <SubmitButton type="submit">Iniciar Sesión</SubmitButton>
+            {loginError && <ErrorMessage>{loginError}</ErrorMessage>}
+            <FormActions>
+              <CheckboxContainer>
+                <input
+                  type="checkbox"
+                  id="remember"
+                />
+                <CheckboxLabel htmlFor="remember">Recuérdame</CheckboxLabel>
+              </CheckboxContainer>
+              <SubmitButton type="submit">Iniciar Sesión</SubmitButton>
+            </FormActions>
+            <ForgotPasswordLink href="/password-reset">¿Olvidaste tu contraseña?</ForgotPasswordLink>
           </form>
           <p>
-            ¿No tienes cuenta? <a href="/register">Regístrate</a>
+            ¿Aún no tienes cuenta? <a href="/register">Regístrate</a>
           </p>
         </FormSection>
-        <ImageSection>
-          <Image src="/portada.png" alt="Imagen de inicio de sesión" width={600} height={600} />
-        </ImageSection>
       </FormContainer>
     </LoginFormWrapper>
   );

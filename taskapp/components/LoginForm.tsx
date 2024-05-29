@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import styled from 'styled-components';
+import { useRouter } from 'next/router';
+import axios from 'axios';
 
 const LoginFormWrapper = styled.div`
   display: flex;
@@ -171,16 +173,31 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string, password?: string }>({});
+  const [loginError, setLoginError] = useState('');
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { email?: string, password?: string } = {};
     if (!email) newErrors.email = 'El correo es obligatorio';
     if (!password) newErrors.password = 'La contraseña es obligatoria';
     setErrors(newErrors);
     if (!Object.keys(newErrors).length) {
-      // Aquí se puede agregar la lógica de autenticación
-      console.log('Login:', { email, password });
+      try {
+        const res = await axios.post('/api/login', { email, password });
+
+        if (res.status === 200) {
+          const { token } = res.data;
+          // Guardar el token y redirigir al usuario
+          localStorage.setItem('token', token);
+          router.push('/dashboard'); // Cambia '/dashboard' por la ruta adecuada
+        } else {
+          const { message } = res.data;
+          setLoginError(message);
+        }
+      } catch (error) {
+        setLoginError('Error al iniciar sesión');
+      }
     }
   };
 
@@ -230,6 +247,7 @@ const LoginForm = () => {
               </ShowPasswordButton>
               {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
             </InputContainer>
+            {loginError && <ErrorMessage>{loginError}</ErrorMessage>}
             <FormActions>
               <CheckboxContainer>
                 <input

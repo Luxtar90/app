@@ -36,7 +36,7 @@ const LogoContainer = styled.div`
 const LogoText = styled.span`
   font-size: 24px;
   font-weight: 600;
-  color: rgba(28, 28, 30, 0.6); /* Color más suave */
+  color: rgba(28, 28, 30, 0.6);
   margin-left: 10px;
 `;
 
@@ -73,7 +73,7 @@ const SocialButton = styled.button`
   justify-content: center;
   align-items: center;
   transition: background-color 0.3s;
-  
+
   &:hover {
     background-color: #e1e6e9;
   }
@@ -83,7 +83,7 @@ const Divider = styled.div`
   display: flex;
   align-items: center;
   text-align: center;
-  color: rgba(28, 28, 30, 0.6); /* Color más suave */
+  color: rgba(28, 28, 30, 0.6);
   margin: 20px 0;
 
   &::before, &::after {
@@ -198,7 +198,7 @@ const RegisterForm = () => {
 
     if (!Object.keys(newErrors).length) {
       try {
-        const response = await axios.post('/register', {
+        const response = await axios.post('/users/register', {
           firstName,
           lastName,
           phone,

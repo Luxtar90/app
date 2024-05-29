@@ -1,10 +1,10 @@
 const express = require('express');
-const { register, login, requestPasswordReset, resetPassword } = require('../controllers/userController'); // Asegúrate de que esta ruta sea correcta
+const { register, login } = require('../controllers/userController');
 const router = express.Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/request-password-reset', requestPasswordReset);
-router.post('/reset-password', resetPassword);
+
+// Agrega otras rutas aquí
 
 module.exports = router;
